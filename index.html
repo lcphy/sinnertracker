@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SinnerTracker — Tutto su Jannik Sinner in tempo reale</title>
+  <meta name="description" content="Ranking ATP, partite live, calendario tornei, corsa al N.1 e quote. Tutto su Jannik Sinner in una pagina, sempre aggiornato.">
+
+  <!-- Open Graph (WhatsApp, Telegram, Facebook) -->
+  <meta property="og:title" content="SinnerTracker — Tutto su Jannik Sinner in tempo reale">
+  <meta property="og:description" content="Ranking ATP, partite live, corsa al N.1 e quote. La dashboard per i fan italiani di Sinner.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="it_IT">
+
+  <!-- Twitter/X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SinnerTracker — Tutto su Jannik Sinner in tempo reale">
+  <meta name="twitter:description" content="Ranking ATP, partite live, corsa al N.1 e quote. La dashboard per i fan italiani di Sinner.">
+
+  <!-- SEO -->
+  <link rel="canonical" href="https://sinnertracker.it">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1A1A1A">
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Structured Data (Schema.org) — aiuta Google a capire cosa contiene la pagina -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "SinnerTracker",
+    "description": "Dashboard in tempo reale per seguire Jannik Sinner: ranking ATP, partite, calendario tornei, corsa al N.1 e quote.",
+    "url": "https://sinnertracker.it",
+    "applicationCategory": "SportsApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "it",
+    "about": {
+      "@type": "Person",
+      "name": "Jannik Sinner",
+      "nationality": "Italian",
+      "jobTitle": "Professional Tennis Player"
+    }
+  }
+  </script>
+
+  <style>
+    /* Visually hidden — accessibile a screen reader, invisibile a occhio */
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Skip link — il primo elemento della pagina per utenti tastiera -->
+<a href="#main-content" class="skip-link">Vai al contenuto</a>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo" aria-label="SinnerTracker — Torna alla home">
+      <div class="flag">
+        <span style="background:#009246"></span>
+        <span style="background:#fff"></span>
+        <span style="background:#CE2B37"></span>
+      </div>
+      <span>Sinner<span class="logo-accent">Tracker</span></span>
+    </a>
+    <div class="live-badge"><div class="live-dot"></div> &#x1F3AF; Prossimo: Monte Carlo 5&ndash;13 Apr</div>
+  </div>
+</header>
+
+<nav class="tab-bar" aria-label="Sezioni SinnerTracker">
+  <div class="tabs" role="tablist">
+    <button role="tab" class="tab active" aria-selected="true" aria-controls="pane-overview" id="tab-overview" tabindex="0">Overview</button>
+    <button role="tab" class="tab" aria-selected="false" aria-controls="pane-news" id="tab-news" tabindex="-1">Notizie</button>
+    <button role="tab" class="tab" aria-selected="false" aria-controls="pane-ranking" id="tab-ranking" tabindex="-1">Ranking</button>
+    <button role="tab" class="tab" aria-selected="false" aria-controls="pane-calendario" id="tab-calendario" tabindex="-1">Calendario</button>
+    <button role="tab" class="tab" aria-selected="false" aria-controls="pane-previsione" id="tab-previsione" tabindex="-1">Previsione N.1</button>
+    <button role="tab" class="tab" aria-selected="false" aria-controls="pane-quote" id="tab-quote" tabindex="-1">Quote</button>
+  </div>
+</nav>
+
+<main id="main-content">
+  <div role="tabpanel" class="pane active" id="pane-overview" aria-labelledby="tab-overview"></div>
+  <div role="tabpanel" class="pane" id="pane-news" aria-labelledby="tab-news" hidden></div>
+  <div role="tabpanel" class="pane" id="pane-ranking" aria-labelledby="tab-ranking" hidden></div>
+  <div role="tabpanel" class="pane" id="pane-calendario" aria-labelledby="tab-calendario" hidden></div>
+  <div role="tabpanel" class="pane" id="pane-previsione" aria-labelledby="tab-previsione" hidden></div>
+  <div role="tabpanel" class="pane" id="pane-quote" aria-labelledby="tab-quote" hidden></div>
+</main>
+
+<footer id="site-footer"></footer>
+
+<!-- Scripts: data prima, poi app (l'ordine conta: app.js legge DATA) -->
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
