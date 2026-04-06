@@ -126,7 +126,7 @@ function renderOverview() {
       </div>
       <div class="bar"><div class="bar-inner" style="width:${barPct}%"></div></div>
       <div class="note-box">
-        &#x1F3AF; All'inizio di Monte Carlo il gap &egrave; gi&agrave; virtualmente <strong>${Math.abs(DATA.virtualGap)} pts</strong> (Alcaraz perde ${fmtPts(NT.alcarazDefends)} in scadenza). Una vittoria di Sinner = ${fmtPts(S.points + 1000)} pts &mdash; Alcaraz non pu&ograve; raggiungerlo neppure arrivando in finale. <strong>N.1 automatico.</strong>
+        &#x1F3AF; All'inizio di Monte Carlo il gap &egrave; gi&agrave; virtualmente <strong>${Math.abs(DATA.virtualGap)} pts</strong> (Alcaraz perde ${fmtPts(T.alcarazDefends)} in scadenza). Una vittoria di Sinner = ${fmtPts(S.points + 1000)} pts &mdash; Alcaraz non pu&ograve; raggiungerlo neppure arrivando in finale. <strong>N.1 automatico.</strong>
       </div>
     </div>
 
