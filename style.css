@@ -3,6 +3,15 @@
    Design system: light theme, Inter, 3-color system
    ═══════════════════════════════════════════════════════ */
 
+/* ── SELF-HOSTED FONT (GDPR: no Google Fonts CDN) ── */
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/inter-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ── DESIGN TOKENS ── */
 :root {
   --orange: #FF7A00;

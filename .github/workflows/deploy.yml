@@ -1,0 +1,109 @@
+name: Deploy SinnerTracker to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  GCP_REGION: europe-west8
+  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  SERVICE_NAME: sinnertracker
+
+jobs:
+  pre-deploy-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: GDPR compliance check
+        run: |
+          echo "=== GDPR Compliance Check ==="
+          FAIL=0
+          if grep -r "fonts.googleapis.com" --include="*.html" --include="*.css" .; then
+            echo "::error::Google Fonts loaded externally (GDPR violation)"
+            FAIL=1
+          fi
+          if grep -r "google-analytics\|googletagmanager\|gtag(" --include="*.html" --include="*.js" .; then
+            echo "::error::Google Analytics detected (GDPR violation)"
+            FAIL=1
+          fi
+          [ $FAIL -ne 0 ] && exit 1
+          echo "✅ GDPR check passed"
+
+      - name: SEO check
+        run: |
+          echo "=== SEO Check ==="
+          [ ! -f "index.html" ] && echo "::error::Missing index.html" && exit 1
+          grep -q "<title>" index.html && echo "✅ Title present" || echo "::warning::Missing title"
+          grep -q 'meta name="description"' index.html && echo "✅ Meta description present" || echo "::warning::Missing meta description"
+          grep -q 'og:title' index.html && echo "✅ OG tags present" || echo "::warning::Missing OG tags"
+          echo "✅ SEO check done"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: pre-deploy-checks
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Prepare build context
+        run: |
+          mkdir -p build/public/fonts
+          cp index.html build/public/
+          cp style.css build/public/
+          cp app.js build/public/
+          cp data.js build/public/
+          cp fonts/inter-var.woff2 build/public/fonts/
+          [ -f robots.txt ] && cp robots.txt build/public/
+          [ -f sitemap.xml ] && cp sitemap.xml build/public/
+          cp infrastructure/Dockerfile build/
+          cp infrastructure/Caddyfile build/
+
+      - name: Build and push container
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/saas/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          docker build -t "$IMAGE" build/
+          docker push "$IMAGE"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image "${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/saas/${{ env.SERVICE_NAME }}:${{ github.sha }}" \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --cpu 1 \
+            --memory 256Mi \
+            --min-instances 0 \
+            --max-instances 5 \
+            --cpu-throttling \
+            --no-cpu-boost
+
+      - name: Verify deployment
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.GCP_REGION }} --format 'value(status.url)')
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          if [ "$STATUS" = "200" ]; then
+            echo "### ✅ SinnerTracker deployed" >> $GITHUB_STEP_SUMMARY
+            echo "URL: $URL" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::error::Deploy verification failed (HTTP $STATUS)"
+            exit 1
+          fi
