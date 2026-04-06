@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════
 
 const DATA = {
-  lastUpdated: "2026-04-01T23:00:00Z",
+  lastUpdated: "2026-04-06T12:00:00Z",
 
   sinner: {
     name: "J. Sinner",
@@ -40,18 +40,39 @@ const DATA = {
     { rank: 5, name: "D. Medvedev", flag: "\u{1F1F7}\u{1F1FA}", points: 5700, status: "OUT Miami R3", highlight: false },
   ],
 
-  currentTournament: null,
-
-  nextTournament: {
+  currentTournament: {
     name: "Monte Carlo Masters 2026",
-    dates: "5\u201313 Apr 2026",
+    dates: "5\u201312 Apr 2026",
     surface: "Clay",
     location: "Roquebrune-Cap-Martin",
     category: "Masters 1000",
     sinnerDefends: 0,
     alcarazDefends: 1000,
-    drawDate: "Ven 3 Apr",
+    sinnerSeed: 2,
+    alcarazSeed: 1,
+    sinnerNextMatch: {
+      round: "R2",
+      opponent: "\u{1F1EB}\u{1F1F7} U. Humbert",
+      opponentRank: 18,
+      scheduled: "Mar 7 Apr",
+      h2h: "Sinner conduce 3\u20130",
+    },
+    sinnerPath: [
+      { round: "R2", opponent: "U. Humbert \u{1F1EB}\u{1F1F7}", seed: "14" },
+      { round: "R3", opponent: "F. Cerundolo \u{1F1E6}\u{1F1F7} / Qualifier", seed: "" },
+      { round: "QF", opponent: "F. Auger-Aliassime \u{1F1E8}\u{1F1E6}", seed: "8" },
+      { round: "SF", opponent: "A. Zverev \u{1F1E9}\u{1F1EA}", seed: "3" },
+      { round: "F", opponent: "C. Alcaraz \u{1F1EA}\u{1F1F8}", seed: "1" },
+    ],
+    r1Results: [
+      { winner: "C. Norrie \u{1F1EC}\u{1F1E7}", loser: "M. Kecmanovic \u{1F1F7}\u{1F1F8}", score: "6\u20132 4\u20136 7\u20136(0)" },
+      { winner: "G. Monfils \u{1F1EB}\u{1F1F7}", loser: "T. Griekspoor \u{1F1F3}\u{1F1F1}", score: "6\u20137(7) 6\u20131 6\u20134" },
+      { winner: "U. Humbert \u{1F1EB}\u{1F1F7}", loser: "M. Kouame \u{1F1EB}\u{1F1F7}", score: "6\u20133 7\u20135" },
+      { winner: "A. Tabilo \u{1F1E8}\u{1F1F1}", loser: "M. Fucsovics \u{1F1ED}\u{1F1FA}", score: "6\u20134 6\u20133" },
+    ],
   },
+
+  nextTournament: null,
 
   miamiRecap: {
     title: "Miami Open 2026",
@@ -78,6 +99,15 @@ const DATA = {
 
   news: [
     {
+      type: "orange", icon: "\u{1F3BE}",
+      tag: "Live", tagDate: "5\u20136 Apr",
+      headline: "Monte Carlo al via \u2014 Sinner pesca Humbert al R2, possibile finale con Alcaraz",
+      desc: "Sorteggio completato. Sinner [2] debutta marted\u00EC vs Humbert (H2H 3-0). Percorso: Cerundolo (R3), Auger-Aliassime (QF), Zverev (SF). Alcaraz [1] dall\u2019altra parte. Sinner ha anche vinto il doppio con Bergs al primo turno.",
+      source: "ATP Tour \u00B7 Puntodebreak \u00B7 Sky Sport",
+      sourceDate: "5\u20136 Apr",
+      url: "https://www.atptour.com/en/scores/current/monte-carlo/410/daily-schedule",
+    },
+    {
       type: "green", icon: "\u{1F3C6}",
       tag: "Chiuso", tagDate: "30 Mar",
       headline: "Sunshine Double completato \u2014 6-4 6-4 su Lehecka, storia scritta",
@@ -88,7 +118,7 @@ const DATA = {
     },
     {
       type: "orange", icon: "\u{1F3AF}",
-      tag: "Prossimo", tagDate: "5\u201313 Apr",
+      tag: "In corso", tagDate: "5\u201312 Apr",
       headline: "Monte Carlo: gap virtuale a inizio torneo solo 190 pts \u2014 N.1 a portata",
       desc: "Alcaraz difende 1.000 pts, Sinner zero. Se Sinner vince: sale a 13.400 pts, Alcaraz non pu\u00F2 raggiungerlo neppure in finale. Vittoria = ritorno automatico al N.1.",
       source: "Eurosport \u00B7 Sport&Finanza \u00B7 OASport",
@@ -140,7 +170,7 @@ const DATA = {
       { dates: "Mar 17\u201330", name: "Miami Open", surface: "Hard \u00B7 Florida \u00B7 Masters 1000", pts: "+1000", status: "\u{1F3C6} Vinto", statusType: "green" },
     ],
     claySwinG: [
-      { dates: "Apr 5\u201313", name: "Monte Carlo Masters", surface: "Terra \u00B7 Monaco \u00B7 Masters 1000", pts: "fino 1000", status: "Prossimo", statusType: "orange" },
+      { dates: "Apr 5\u201312", name: "Monte Carlo Masters", surface: "Terra \u00B7 Monaco \u00B7 Masters 1000", pts: "fino 1000", status: "\u{1F534} In corso", statusType: "orange" },
       { dates: "Apr 28\u2013Mag 4", name: "Mutua Madrid Open", surface: "Terra \u00B7 Spagna \u00B7 Masters 1000", pts: "fino 1000", status: "Upcoming", statusType: "gray" },
       { dates: "Mag 7\u201318", name: "Internazionali BNL d\u2019Italia \u{1F1EE}\u{1F1F9}", surface: "Terra \u00B7 Roma \u00B7 Masters 1000", pts: "fino 1000", status: "Upcoming", statusType: "gray" },
       { dates: "Mag 25\u2013Giu 8", name: "Roland Garros", surface: "Terra \u00B7 Parigi \u00B7 Grand Slam", pts: "fino 2000", status: "Upcoming", statusType: "gray" },

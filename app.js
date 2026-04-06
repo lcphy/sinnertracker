@@ -25,18 +25,37 @@ function renderOverview() {
   const el = document.getElementById("pane-overview");
   const S = DATA.sinner;
   const A = DATA.alcaraz;
-  const NT = DATA.nextTournament;
+  const T = DATA.currentTournament || DATA.nextTournament;
   const M = DATA.miamiRecap;
   const barPct = Math.round((S.points / A.points) * 100);
+  const isLive = !!DATA.currentTournament;
+  const nm = isLive && T.sinnerNextMatch ? T.sinnerNextMatch : null;
 
   el.innerHTML = `
     <h2 class="visually-hidden">Overview</h2>
 
     <div class="match-hero">
       <div class="match-hero-label">
-        <span>Prossimo torneo &mdash; ${NT.name}</span>
-        <span class="match-when">${NT.dates} &middot; ${NT.surface} &middot; ${NT.location}</span>
+        <span>${isLive ? '\u{1F534} In corso' : 'Prossimo torneo'} &mdash; ${T.name}</span>
+        <span class="match-when">${T.dates} &middot; ${T.surface} &middot; ${T.location}</span>
       </div>
+      ${nm ? `
+      <div class="match-players">
+        <div>
+          <div class="player-name orange">${S.name}</div>
+          <div class="player-flag">${S.flag} N.${S.rank} ATP &middot; [${T.sinnerSeed}] &middot; ${fmtPts(S.points)} pts</div>
+        </div>
+        <div class="vs-block">
+          <div class="vs">${nm.round}</div>
+          <div class="round-label" style="font-size:16px;color:var(--orange);">VS</div>
+        </div>
+        <div class="player-right">
+          <div class="player-name">${nm.opponent}</div>
+          <div class="player-flag">N.${nm.opponentRank} ATP &middot; H2H: ${nm.h2h}</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:13px;color:var(--text-on-dark-muted);margin-bottom:16px;">${nm.scheduled}</div>
+      ` : `
       <div class="match-players">
         <div>
           <div class="player-name orange">${S.name}</div>
@@ -47,17 +66,32 @@ function renderOverview() {
           <div class="round-label" style="font-size:20px;color:var(--gold);">&#x1F3AF;</div>
         </div>
         <div class="player-right">
-          <div class="player-name">N.1 ATP</div>
-          <div class="player-flag">Sorteggio ${NT.drawDate}</div>
+          <div class="player-name">TBD</div>
+          <div class="player-flag">In attesa del sorteggio</div>
         </div>
       </div>
+      `}
       <div class="match-stats">
-        <div class="mstat"><div class="mstat-val">${NT.sinnerDefends}</div><div class="mstat-lbl">Pts da difendere</div></div>
-        <div class="mstat"><div class="mstat-val" style="color:var(--red);">&minus;${fmtPts(NT.alcarazDefends)}</div><div class="mstat-lbl">Alcaraz in scadenza</div></div>
-        <div class="mstat"><div class="mstat-val" style="color:var(--gold);">${Math.abs(DATA.virtualGap)}</div><div class="mstat-lbl">Gap virtuale a inizio MC</div></div>
+        <div class="mstat"><div class="mstat-val">${T.sinnerDefends}</div><div class="mstat-lbl">Pts da difendere</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--red);">&minus;${fmtPts(T.alcarazDefends)}</div><div class="mstat-lbl">Alcaraz difende</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--gold);">${Math.abs(DATA.virtualGap)}</div><div class="mstat-lbl">Gap virtuale</div></div>
         <div class="mstat"><div class="mstat-val" style="color:var(--green);">N.1</div><div class="mstat-lbl">Se vince il torneo &#x1F3C6;</div></div>
       </div>
     </div>
+
+    ${isLive && T.sinnerPath ? `
+    <div class="card">
+      <h3 class="card-title">Percorso potenziale di Sinner a ${T.name.split(' 2026')[0]}</h3>
+      ${T.sinnerPath.map(p => `
+        <div class="bracket-row${p.round === nm?.round ? ' final-row' : ''}">
+          <div class="br-round" ${p.round === nm?.round ? 'style="color:var(--orange);"' : ''}>${p.round}</div>
+          <div><div class="br-opp" ${p.round === nm?.round ? 'style="color:var(--orange);font-weight:700;"' : ''}>${p.opponent}</div>${p.seed ? `<div class="br-sub">Seed ${p.seed}</div>` : ''}</div>
+          <div class="br-score"></div>
+          <div><span class="pill ${p.round === nm?.round ? 'pill-orange' : 'pill-gray'}">${p.round === nm?.round ? 'Prossimo' : 'TBD'}</span></div>
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
 
     <div class="card">
       <h3 class="card-title">${M.title} &mdash; Risultati Finali &#x1F3C6;</h3>
