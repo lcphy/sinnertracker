@@ -3,7 +3,8 @@
 // Renderizza tutte le tab da DATA e gestisce navigazione
 // ═══════════════════════════════════════════════════════
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadData();
   renderAll();
   initTabs();
   initTabScrollIndicator();
