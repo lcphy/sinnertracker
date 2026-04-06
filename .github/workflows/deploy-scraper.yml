@@ -1,0 +1,89 @@
+name: Deploy Scraper to Cloud Run Job
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scraper/**']
+
+env:
+  GCP_REGION: europe-west8
+  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  JOB_NAME: sinnertracker-scraper
+
+jobs:
+  deploy-scraper:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build and push scraper container
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/saas/${{ env.JOB_NAME }}:${{ github.sha }}"
+          docker build -t "$IMAGE" scraper/
+          docker push "$IMAGE"
+
+      - name: Create or update Cloud Run Job
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/saas/${{ env.JOB_NAME }}:${{ github.sha }}"
+
+          # Check if job exists
+          if gcloud run jobs describe ${{ env.JOB_NAME }} --region ${{ env.GCP_REGION }} 2>/dev/null; then
+            echo "Updating existing job..."
+            gcloud run jobs update ${{ env.JOB_NAME }} \
+              --image "$IMAGE" \
+              --region ${{ env.GCP_REGION }} \
+              --set-env-vars "SUPABASE_URL=https://czcszeoylcelgtduijqc.supabase.co,SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              --memory 512Mi \
+              --cpu 1 \
+              --max-retries 1 \
+              --task-timeout 300s
+          else
+            echo "Creating new job..."
+            gcloud run jobs create ${{ env.JOB_NAME }} \
+              --image "$IMAGE" \
+              --region ${{ env.GCP_REGION }} \
+              --set-env-vars "SUPABASE_URL=https://czcszeoylcelgtduijqc.supabase.co,SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              --memory 512Mi \
+              --cpu 1 \
+              --max-retries 1 \
+              --task-timeout 300s
+          fi
+
+      - name: Run scraper once to verify
+        run: |
+          gcloud run jobs execute ${{ env.JOB_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --wait
+
+      - name: Setup Cloud Scheduler (every 30 min during tournaments)
+        run: |
+          # Create scheduler job if it doesn't exist
+          if ! gcloud scheduler jobs describe sinnertracker-scrape --location ${{ env.GCP_REGION }} 2>/dev/null; then
+            gcloud scheduler jobs create http sinnertracker-scrape \
+              --location ${{ env.GCP_REGION }} \
+              --schedule "*/30 6-23 * * *" \
+              --time-zone "Europe/Rome" \
+              --uri "https://${{ env.GCP_REGION }}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${{ env.GCP_PROJECT }}/jobs/${{ env.JOB_NAME }}:run" \
+              --http-method POST \
+              --oauth-service-account-email "github-deploy@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com" \
+              --description "SinnerTracker: scrape ATP data every 30 min (6am-11pm Rome time)"
+            echo "✅ Scheduler created"
+          else
+            echo "✅ Scheduler already exists"
+          fi
