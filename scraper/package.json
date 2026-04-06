@@ -1,0 +1,17 @@
+{
+  "name": "sinnertracker-scraper",
+  "version": "1.0.0",
+  "description": "ATP data scraper for SinnerTracker",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "scrape": "node index.js",
+    "scrape:ranking": "node index.js --only=ranking",
+    "scrape:news": "node index.js --only=news"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}
