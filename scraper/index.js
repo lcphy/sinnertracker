@@ -1,13 +1,12 @@
 // ═══════════════════════════════════════════════════════
 // SinnerTracker — Scraper
-// Legge dati ATP, news RSS, e aggiorna Supabase.
-// Deployato come Cloud Run Job, triggerato da scheduler.
+// Priorita: API SportScore (live data) → RSS (news) → fallback
+// Budget: 500 API calls/month — be surgical
 // ═══════════════════════════════════════════════════════
 
-import { scrapeRanking } from "./scrapers/ranking.js";
+import { scrapeViaAPI } from "./scrapers/api-tennis.js";
 import { scrapeNews } from "./scrapers/news.js";
-import { scrapeTournament } from "./scrapers/tournament.js";
-import { supabase, updateMeta } from "./lib/supabase.js";
+import { updateMeta } from "./lib/supabase.js";
 
 const ONLY = process.argv.find(a => a.startsWith("--only="))?.split("=")[1];
 
@@ -20,25 +19,20 @@ async function main() {
   const results = {};
 
   try {
-    if (!ONLY || ONLY === "ranking") {
-      console.log("▸ Scraping ranking...");
-      results.ranking = await scrapeRanking();
-      console.log(`  ✅ Ranking: ${results.ranking.count} players updated`);
+    // Primary: API for match data (live scores, results, next match)
+    if (!ONLY || ONLY === "api" || ONLY === "match") {
+      console.log("▸ Checking match data via API...");
+      results.api = await scrapeViaAPI();
+      console.log(`  ✅ API: ${JSON.stringify(results.api)}`);
     }
 
+    // Secondary: RSS for news (free, unlimited)
     if (!ONLY || ONLY === "news") {
-      console.log("▸ Scraping news...");
+      console.log("▸ Scraping news via RSS...");
       results.news = await scrapeNews();
       console.log(`  ✅ News: ${results.news.count} articles`);
     }
 
-    if (!ONLY || ONLY === "tournament") {
-      console.log("▸ Scraping tournament...");
-      results.tournament = await scrapeTournament();
-      console.log(`  ✅ Tournament: ${results.tournament.status}`);
-    }
-
-    // Update last_updated timestamp
     await updateMeta("last_updated", new Date().toISOString());
 
     console.log("");
