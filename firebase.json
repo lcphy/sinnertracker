@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "site": "sinnertracker",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "scraper/**",
+      "supabase/**",
+      "infrastructure/**",
+      "*.md",
+      "*.docx",
+      "serve.py",
+      "sinnertracker.html",
+      "sinnertracker_context.md",
+      "SinnerTracker_PRD.docx"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]
+      },
+      {
+        "source": "**/*.woff2",
+        "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]
+      }
+    ]
+  }
+}

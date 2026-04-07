@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sinnertracker.it/sitemap.xml
+Sitemap: https://sinnertracker.com/sitemap.xml

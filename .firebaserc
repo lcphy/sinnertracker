@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "ai-agency-eu"
+  },
+  "targets": {
+    "ai-agency-eu": {
+      "hosting": {
+        "sinnertracker": ["sinnertracker"]
+      }
+    }
+  }
+}
