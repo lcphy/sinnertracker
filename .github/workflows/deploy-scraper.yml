@@ -71,19 +71,13 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --wait
 
-      - name: Setup Cloud Scheduler (every 30 min during tournaments)
+      - name: Update daily scheduler to 8am
         run: |
-          # Create scheduler job if it doesn't exist
-          if ! gcloud scheduler jobs describe sinnertracker-scrape --location ${{ env.GCP_REGION }} 2>/dev/null; then
-            gcloud scheduler jobs create http sinnertracker-scrape \
-              --location ${{ env.GCP_REGION }} \
-              --schedule "*/30 6-23 * * *" \
-              --time-zone "Europe/Rome" \
-              --uri "https://${{ env.GCP_REGION }}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${{ env.GCP_PROJECT }}/jobs/${{ env.JOB_NAME }}:run" \
-              --http-method POST \
-              --oauth-service-account-email "github-deploy@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com" \
-              --description "SinnerTracker: scrape ATP data every 30 min (6am-11pm Rome time)"
-            echo "✅ Scheduler created"
-          else
-            echo "✅ Scheduler already exists"
-          fi
+          # Update existing scheduler to daily at 8am with --mode=daily
+          gcloud scheduler jobs update http sinnertracker-scrape \
+            --location europe-west1 \
+            --schedule "0 8 * * *" \
+            --time-zone "Europe/Rome" \
+            --description "SinnerTracker: daily check at 8am — creates live trigger if Sinner plays" \
+            --project ${{ env.GCP_PROJECT }} 2>/dev/null || echo "Scheduler already up to date"
+          echo "✅ Daily scheduler configured (8am Rome)"
