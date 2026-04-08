@@ -52,7 +52,7 @@ function renderOverview() {
         </div>
         <div class="player-right">
           <div class="player-name">${nm.opponent}</div>
-          <div class="player-flag">N.${nm.opponentRank} ATP &middot; H2H: ${nm.h2h}</div>
+          <div class="player-flag">${nm.opponentRank ? `N.${nm.opponentRank} ATP &middot; ` : ''}${nm.h2h ? `H2H: ${nm.h2h}` : ''}</div>
         </div>
       </div>
       <div style="text-align:center;font-size:13px;color:var(--text-on-dark-muted);margin-bottom:16px;">${nm.scheduled}</div>

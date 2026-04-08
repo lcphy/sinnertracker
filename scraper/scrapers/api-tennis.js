@@ -159,12 +159,10 @@ async function updateMatchResult(match) {
   const scoreStr = sets.join(" ");
   const roundName = getRoundName(match.round_info);
 
-  // Update draw_path
-  await supabase.upsert("draw_path", {
-    round: roundName,
+  // Update draw_path: PATCH the existing row for this round (no duplicates)
+  await supabase.updateByFilter("draw_path", `round=eq.${encodeURIComponent(roundName)}`, {
     result: won ? "W" : "L",
     score: scoreStr,
-    opponent: opponent.name,
     updated_at: new Date().toISOString(),
   });
 
@@ -181,36 +179,45 @@ async function updateMatchResult(match) {
     });
   }
 
-  // Add to recent_form
+  // Add to recent_form (skip if this exact match is already at the top)
   const forms = await supabase.select("recent_form", "order=sort_order");
-  const newForm = forms.slice(0, 7).map((f, i) => ({
-    result: f.result,
-    detail: f.detail,
-    sort_order: i + 2,
-  }));
-  newForm.unshift({
-    result: won ? "W" : "L",
-    detail: `${roundName} MC ${opponent.name} ${scoreStr}`,
-    sort_order: 1,
-  });
-  await supabase.replaceAll("recent_form", newForm);
+  const newDetail = `${roundName} MC ${opponent.name} ${scoreStr}`;
+  const alreadyTop = forms[0]?.detail === newDetail;
+  if (!alreadyTop) {
+    const newForm = forms.slice(0, 7).map((f, i) => ({
+      result: f.result,
+      detail: f.detail,
+      sort_order: i + 2,
+    }));
+    newForm.unshift({
+      result: won ? "W" : "L",
+      detail: newDetail,
+      sort_order: 1,
+    });
+    await supabase.replaceAll("recent_form", newForm);
+  }
 
-  // Add news
-  await supabase.upsert("news", {
-    type: won ? "green" : "red",
-    icon: won ? "🎾" : "😔",
-    tag: "Risultato",
-    tag_date: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
-    headline: won
-      ? `Sinner batte ${opponent.name} ${scoreStr} — avanza a Monte Carlo`
-      : `Sinner eliminato da ${opponent.name} ${scoreStr}`,
-    description: `${roundName} Monte Carlo Masters 2026.`,
-    source: "SportScore API",
-    source_date: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
-    url: "https://sinnertracker.com",
-    sort_order: 0,
-    updated_at: new Date().toISOString(),
-  });
+  // Add news (only if no news for this opponent already exists)
+  const newsHeadline = won
+    ? `Sinner batte ${opponent.name} ${scoreStr} — avanza a Monte Carlo`
+    : `Sinner eliminato da ${opponent.name} ${scoreStr}`;
+  const oppLastName = opponent.name.split(" ")[0];
+  const existingNews = await supabase.select("news", `headline=ilike.*${encodeURIComponent(oppLastName)}*`);
+  if (existingNews.length === 0) {
+    await supabase.insert("news", {
+      type: won ? "green" : "red",
+      icon: won ? "🎾" : "😔",
+      tag: "Risultato",
+      tag_date: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+      headline: newsHeadline,
+      description: `${roundName} Monte Carlo Masters 2026.`,
+      source: "SportScore API",
+      source_date: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+      url: "https://sinnertracker.com",
+      sort_order: 0,
+      updated_at: new Date().toISOString(),
+    });
+  }
 
   await updateMeta("last_updated", new Date().toISOString());
   return { status: "result_updated", won, score: scoreStr };
@@ -239,10 +246,18 @@ async function updateNextMatch(match) {
 }
 
 // ── Round name mapper ──
+// SportScore API returns roundInfo.name like "Round of 32", "Quarterfinals", etc.
+// We map by name (most reliable) — Monte Carlo 56-draw uses R2/R3/QF/SF/F
 function getRoundName(roundInfo) {
   if (!roundInfo) return "R?";
-  const map = {
-    2: "F", 4: "SF", 8: "QF", 16: "R3", 32: "R2", 64: "R1", 128: "Q",
-  };
-  return map[roundInfo.cupRoundType] || roundInfo.name || `R${roundInfo.round}`;
+  const name = (roundInfo.name || "").toLowerCase();
+  if (name.includes("final") && !name.includes("semi") && !name.includes("quarter")) return "F";
+  if (name.includes("semifinal")) return "SF";
+  if (name.includes("quarterfinal")) return "QF";
+  if (name.includes("round of 16")) return "R3"; // R16 = R3 in 56-draw
+  if (name.includes("round of 32")) return "R2";
+  if (name.includes("round of 64")) return "R1";
+  if (name.includes("round of 128")) return "R1";
+  // Fallback: return the raw name
+  return roundInfo.name || "R?";
 }

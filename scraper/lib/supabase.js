@@ -64,6 +64,34 @@ export const supabase = {
     if (!res.ok) throw new Error(`Supabase select ${table}: ${res.status}`);
     return res.json();
   },
+
+  // Update by filter (PATCH) — updates only matching rows, never creates new
+  async updateByFilter(table, filter, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Supabase updateByFilter ${table}: ${res.status} ${err}`);
+    }
+    return true;
+  },
+
+  // Plain insert (no upsert) — always creates a new row
+  async insert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(Array.isArray(data) ? data : [data]),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Supabase insert ${table}: ${res.status} ${err}`);
+    }
+    return true;
+  },
 };
 
 export async function updateMeta(key, value) {
