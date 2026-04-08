@@ -83,14 +83,21 @@ function renderOverview() {
     ${isLive && T.sinnerPath ? `
     <div class="card">
       <h3 class="card-title">Percorso potenziale di Sinner a ${T.name.split(' 2026')[0]}</h3>
-      ${T.sinnerPath.map(p => `
-        <div class="bracket-row${p.round === nm?.round ? ' final-row' : ''}">
-          <div class="br-round" ${p.round === nm?.round ? 'style="color:var(--orange);"' : ''}>${p.round}</div>
-          <div><div class="br-opp" ${p.round === nm?.round ? 'style="color:var(--orange);font-weight:700;"' : ''}>${p.opponent}</div>${p.seed ? `<div class="br-sub">Seed ${p.seed}</div>` : ''}</div>
-          <div class="br-score"></div>
-          <div><span class="pill ${p.round === nm?.round ? 'pill-orange' : 'pill-gray'}">${p.round === nm?.round ? 'Prossimo' : 'TBD'}</span></div>
-        </div>
-      `).join('')}
+      ${T.sinnerPath.map(p => {
+        const isPlayed = !!p.result;
+        const isNext = p.round === nm?.round;
+        const won = p.result === "W";
+        const pillClass = isPlayed ? (won ? 'pill-green' : 'pill-red') : (isNext ? 'pill-orange' : 'pill-gray');
+        const pillText = isPlayed ? p.result : (isNext ? 'Prossimo' : 'TBD');
+        const rowClass = isNext && !isPlayed ? ' final-row' : '';
+        return `
+        <div class="bracket-row${rowClass}">
+          <div class="br-round" ${isNext && !isPlayed ? 'style="color:var(--orange);"' : ''}>${p.round}</div>
+          <div><div class="br-opp" ${isNext && !isPlayed ? 'style="color:var(--orange);font-weight:700;"' : ''}>${p.opponent}</div>${p.seed ? `<div class="br-sub">Seed ${p.seed}</div>` : ''}</div>
+          <div class="br-score">${p.score || ''}</div>
+          <div><span class="pill ${pillClass}">${pillText}</span></div>
+        </div>`;
+      }).join('')}
     </div>
     ` : ''}
 
