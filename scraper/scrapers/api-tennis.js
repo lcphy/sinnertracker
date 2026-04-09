@@ -228,25 +228,94 @@ async function updateMatchResult(match) {
 }
 
 // ── Update next match info ──
+// IMPORTANT: only updates fields the API can reliably provide (round, scheduled).
+// Does NOT overwrite opponent name/rank/H2H if they've been manually enriched,
+// unless the opponent has changed.
 async function updateNextMatch(match) {
   const isSinnerHome = match.home_team?.id === SINNER_ID;
   const opponent = isSinnerHome ? match.away_team : match.home_team;
-  const startDate = new Date(match.start_at * 1000);
-  const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
-  const scheduled = `${dayNames[startDate.getDay()]} ${startDate.getDate()} Apr, ${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+  const scheduled = formatMatchDateTime(match.start_at);
+  const roundName = getRoundName(match.round_info);
+  const rawOpponentName = opponent.name; // e.g. "Auger-Aliassime F."
 
-  await supabase.upsert("current_tournament", {
+  // Read current state to decide whether to overwrite enriched fields
+  const current = (await supabase.select("current_tournament"))[0] || {};
+  const opponentChanged = !current.next_opponent ||
+    !current.next_opponent.toLowerCase().includes(
+      (rawOpponentName.split(" ")[0] || "").toLowerCase()
+    );
+
+  const patch = {
     id: 1,
-    next_round: getRoundName(match.round_info),
-    next_opponent: opponent.name,
-    next_opponent_rank: null,
+    next_round: roundName,
     next_scheduled: scheduled,
-    next_h2h: "",
     updated_at: new Date().toISOString(),
-  });
+  };
+  // Only overwrite opponent name if it's a different player (manual enrichment preserved)
+  if (opponentChanged) {
+    patch.next_opponent = rawOpponentName;
+    patch.next_opponent_rank = null;
+    patch.next_h2h = "";
+  }
+
+  await supabase.upsert("current_tournament", patch);
+
+  // Auto-generate news for the scheduled match (only if not already present)
+  const existing = await supabase.select("news", `headline=ilike.*${encodeURIComponent(opponent.name.split(" ")[0])}*`);
+  if (existing.length === 0) {
+    const roundLabel = {
+      R1: "primo turno", R2: "secondo turno", R3: "terzo turno",
+      QF: "quarti di finale", SF: "semifinale", F: "finale"
+    }[roundName] || roundName;
+    await supabase.insert("news", {
+      type: "orange",
+      icon: "\u{1F3AF}",
+      tag: "Prossimo match",
+      tag_date: scheduled,
+      headline: `${roundLabel.charAt(0).toUpperCase() + roundLabel.slice(1)}: Sinner vs ${opponent.name} — ${scheduled}`,
+      description: `Sinner affronta ${opponent.name} nel ${roundLabel} di Monte Carlo. Match programmato: ${scheduled}.`,
+      source: "SportScore API",
+      source_date: new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+      url: "https://sinnertracker.com",
+      sort_order: 1,
+      updated_at: new Date().toISOString(),
+    });
+  }
 
   await updateMeta("last_updated", new Date().toISOString());
   return { status: "next_match_updated", opponent: opponent.name, scheduled };
+}
+
+// ── Format match datetime in Italian: "Ven 10 Apr · 09:00" ──
+// SportScore API returns start_at as local time at the venue (Europe/Monaco for MC),
+// NOT UTC. We parse the raw values directly without timezone conversion.
+function formatMatchDateTime(startAt) {
+  if (!startAt) return "TBD";
+
+  // Handle both string "2026-04-10 09:00:00" and unix timestamp
+  let year, month, day, hour, minute;
+  if (typeof startAt === "number") {
+    const d = new Date(startAt * 1000);
+    year = d.getUTCFullYear();
+    month = d.getUTCMonth() + 1;
+    day = d.getUTCDate();
+    hour = d.getUTCHours();
+    minute = d.getUTCMinutes();
+  } else {
+    const m = String(startAt).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    if (!m) return "TBD";
+    [, year, month, day, hour, minute] = m.map(Number);
+  }
+
+  const months = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
+  const days = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  // Compute day of week from date components (using UTC to avoid TZ issues)
+  const wday = days[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+
+  const mm = String(month).padStart(2, "0");
+  const hh = String(hour).padStart(2, "0");
+  const min = String(minute).padStart(2, "0");
+  return `${wday} ${day} ${months[month - 1]} \u00B7 ${hh}:${min}`;
 }
 
 // ── Round name mapper ──

@@ -63,21 +63,23 @@ function renderOverview() {
         <span class="match-when">${T.dates} &middot; ${T.surface} &middot; ${T.location}</span>
       </div>
       ${nm ? `
+      <div class="next-match-banner">
+        <div class="next-match-label">${esc(nm.round)} &middot; Prossimo match</div>
+        <div class="next-match-when">${esc(nm.scheduled)}</div>
+      </div>
       <div class="match-players">
         <div>
           <div class="player-name orange">${S.name}</div>
           <div class="player-flag">${S.flag} N.${S.rank} ATP &middot; [${T.sinnerSeed}] &middot; ${fmtPts(S.points)} pts</div>
         </div>
         <div class="vs-block">
-          <div class="vs">${esc(nm.round)}</div>
-          <div class="round-label" style="font-size:16px;color:var(--orange);">VS</div>
+          <div class="vs">VS</div>
         </div>
         <div class="player-right">
           <div class="player-name">${esc(nm.opponent)}</div>
-          <div class="player-flag">${nm.opponentRank ? `N.${esc(nm.opponentRank)} ATP &middot; ` : ''}${nm.h2h ? `H2H: ${esc(nm.h2h)}` : ''}</div>
+          <div class="player-flag">${nm.opponentRank ? `N.${esc(nm.opponentRank)} ATP` : ''}${nm.opponentRank && nm.h2h ? ' &middot; ' : ''}${nm.h2h ? `H2H ${esc(nm.h2h)}` : ''}</div>
         </div>
       </div>
-      <div style="text-align:center;font-size:13px;color:var(--text-on-dark-muted);margin-bottom:16px;">${esc(nm.scheduled)}</div>
       ` : `
       <div class="match-players">
         <div>
