@@ -5,18 +5,53 @@
     "ignore": [
       "firebase.json",
       "**/.*",
+      ".git/**",
+      ".github/**",
+      ".firebaserc",
+      ".gitignore",
+      ".env",
+      ".env.*",
+      ".DS_Store",
       "**/node_modules/**",
       "scraper/**",
       "supabase/**",
       "infrastructure/**",
+      "tests/**",
       "*.md",
       "*.docx",
       "serve.py",
       "sinnertracker.html",
       "sinnertracker_context.md",
-      "SinnerTracker_PRD.docx"
+      "SinnerTracker_PRD.docx",
+      "ADR_*.md",
+      "PRD_*.md"
     ],
     "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self'; connect-src 'self' https://czcszeoylcelgtduijqc.supabase.co; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "DENY"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), microphone=(), geolocation=(), payment=()"
+          }
+        ]
+      },
       {
         "source": "**/*.@(js|css)",
         "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]

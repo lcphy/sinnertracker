@@ -4,8 +4,14 @@
 # Run once after schema.sql to populate initial data
 # ═══════════════════════════════════════════════════════
 
-API="https://czcszeoylcelgtduijqc.supabase.co/rest/v1"
-KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6Y3N6ZW95bGNlbGd0ZHVpanFjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTQ5MzgzMCwiZXhwIjoyMDkxMDY5ODMwfQ.fRKT2Lu_gh8ziBiycmDAM5j38AaC5mP3VWJ8fgixHM0"
+API="${SUPABASE_URL:-https://czcszeoylcelgtduijqc.supabase.co}/rest/v1"
+KEY="${SUPABASE_SERVICE_ROLE_KEY}"
+
+if [ -z "$KEY" ]; then
+  echo "❌ SUPABASE_SERVICE_ROLE_KEY env var required"
+  echo "   Usage: SUPABASE_SERVICE_ROLE_KEY=... ./seed.sh"
+  exit 1
+fi
 H1="apikey: $KEY"
 H2="Authorization: Bearer $KEY"
 H3="Content-Type: application/json"

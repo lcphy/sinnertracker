@@ -10,6 +10,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   initTabScrollIndicator();
 });
 
+// ── XSS PROTECTION ──────────────────────────────────────
+// HTML escape per prevenire injection da campi user-generated.
+// Tutti i campi che vengono da Supabase (news, headlines, opponents, ecc.)
+// devono passare da esc() prima di essere interpolati in innerHTML.
+function esc(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// URL whitelist: solo http(s) sono ammessi (nessun javascript:)
+function safeUrl(u) {
+  if (!u) return "#";
+  const s = String(u).trim();
+  if (/^https?:\/\//i.test(s)) return s;
+  return "#";
+}
+
 // ── RENDER ──────────────────────────────────────────────
 
 function renderAll() {
@@ -47,15 +69,15 @@ function renderOverview() {
           <div class="player-flag">${S.flag} N.${S.rank} ATP &middot; [${T.sinnerSeed}] &middot; ${fmtPts(S.points)} pts</div>
         </div>
         <div class="vs-block">
-          <div class="vs">${nm.round}</div>
+          <div class="vs">${esc(nm.round)}</div>
           <div class="round-label" style="font-size:16px;color:var(--orange);">VS</div>
         </div>
         <div class="player-right">
-          <div class="player-name">${nm.opponent}</div>
-          <div class="player-flag">${nm.opponentRank ? `N.${nm.opponentRank} ATP &middot; ` : ''}${nm.h2h ? `H2H: ${nm.h2h}` : ''}</div>
+          <div class="player-name">${esc(nm.opponent)}</div>
+          <div class="player-flag">${nm.opponentRank ? `N.${esc(nm.opponentRank)} ATP &middot; ` : ''}${nm.h2h ? `H2H: ${esc(nm.h2h)}` : ''}</div>
         </div>
       </div>
-      <div style="text-align:center;font-size:13px;color:var(--text-on-dark-muted);margin-bottom:16px;">${nm.scheduled}</div>
+      <div style="text-align:center;font-size:13px;color:var(--text-on-dark-muted);margin-bottom:16px;">${esc(nm.scheduled)}</div>
       ` : `
       <div class="match-players">
         <div>
@@ -82,19 +104,19 @@ function renderOverview() {
 
     ${isLive && T.sinnerPath ? `
     <div class="card">
-      <h3 class="card-title">Percorso potenziale di Sinner a ${T.name.split(' 2026')[0]}</h3>
+      <h3 class="card-title">Percorso potenziale di Sinner a ${esc(T.name.split(' 2026')[0])}</h3>
       ${T.sinnerPath.map(p => {
         const isPlayed = !!p.result;
         const isNext = p.round === nm?.round;
         const won = p.result === "W";
         const pillClass = isPlayed ? (won ? 'pill-green' : 'pill-red') : (isNext ? 'pill-orange' : 'pill-gray');
-        const pillText = isPlayed ? p.result : (isNext ? 'Prossimo' : 'TBD');
+        const pillText = isPlayed ? esc(p.result) : (isNext ? 'Prossimo' : 'TBD');
         const rowClass = isNext && !isPlayed ? ' final-row' : '';
         return `
         <div class="bracket-row${rowClass}">
-          <div class="br-round" ${isNext && !isPlayed ? 'style="color:var(--orange);"' : ''}>${p.round}</div>
-          <div><div class="br-opp" ${isNext && !isPlayed ? 'style="color:var(--orange);font-weight:700;"' : ''}>${p.opponent}</div>${p.seed ? `<div class="br-sub">Seed ${p.seed}</div>` : ''}</div>
-          <div class="br-score">${p.score || ''}</div>
+          <div class="br-round" ${isNext && !isPlayed ? 'style="color:var(--orange);"' : ''}>${esc(p.round)}</div>
+          <div><div class="br-opp" ${isNext && !isPlayed ? 'style="color:var(--orange);font-weight:700;"' : ''}>${esc(p.opponent)}</div>${p.seed ? `<div class="br-sub">Seed ${esc(p.seed)}</div>` : ''}</div>
+          <div class="br-score">${esc(p.score || '')}</div>
           <div><span class="pill ${pillClass}">${pillText}</span></div>
         </div>`;
       }).join('')}
@@ -102,12 +124,12 @@ function renderOverview() {
     ` : ''}
 
     <div class="card">
-      <h3 class="card-title">${M.title} &mdash; Risultati Finali &#x1F3C6;</h3>
+      <h3 class="card-title">${esc(M.title)} &mdash; Risultati Finali &#x1F3C6;</h3>
       ${M.matches.map(m => `
         <div class="bracket-row${m.isFinal ? ' final-row' : ''}">
-          <div class="br-round">${m.isFinal ? 'FINALE &#x1F3C6;' : m.round}</div>
-          <div><div class="br-opp">${m.opponent}</div>${m.note ? `<div class="br-sub">${m.note}</div>` : ''}</div>
-          <div class="br-score">${m.score}</div>
+          <div class="br-round">${m.isFinal ? 'FINALE &#x1F3C6;' : esc(m.round)}</div>
+          <div><div class="br-opp">${esc(m.opponent)}</div>${m.note ? `<div class="br-sub">${esc(m.note)}</div>` : ''}</div>
+          <div class="br-score">${esc(m.score)}</div>
           <div><span class="pill pill-green">${m.isFinal ? '&#x1F3C6; WON' : 'W'}</span></div>
         </div>
       `).join('')}
@@ -138,16 +160,16 @@ function renderOverview() {
     </div>
 
     <div class="stat-row">
-      <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${S.wl}</div><div class="stat-lbl">Win/Loss 2026</div></div>
-      <div class="stat-box green-top"><div class="stat-num">${S.setsM1000}</div><div class="stat-lbl">Set vinti di fila ai M1000 &mdash; Record ATP</div></div>
-      <div class="stat-box"><div class="stat-num" style="color:var(--gold);">${S.titles2026}</div><div class="stat-lbl">Titoli 2026 &mdash; IW &#x1F3C6; + Miami &#x1F3C6;</div></div>
-      <div class="stat-box gray-top"><div class="stat-num">${S.m1000Career}</div><div class="stat-lbl">Masters 1000 in carriera &mdash; tutti su cemento</div></div>
+      <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${esc(S.wl)}</div><div class="stat-lbl">Win/Loss 2026</div></div>
+      <div class="stat-box green-top"><div class="stat-num">${esc(S.setsM1000)}</div><div class="stat-lbl">Set vinti di fila ai M1000 &mdash; Record ATP</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--gold);">${esc(S.titles2026)}</div><div class="stat-lbl">Titoli 2026 &mdash; IW &#x1F3C6; + Miami &#x1F3C6;</div></div>
+      <div class="stat-box gray-top"><div class="stat-num">${esc(S.m1000Career)}</div><div class="stat-lbl">Masters 1000 in carriera &mdash; tutti su cemento</div></div>
     </div>
 
     <div class="card">
       <h3 class="card-title">Ultimi 8 risultati</h3>
       <div class="form-row">
-        ${DATA.recentForm.map(f => `<div class="fd ${f.result.toLowerCase()}" title="${f.detail}">${f.result}</div>`).join('')}
+        ${DATA.recentForm.map(f => `<div class="fd ${f.result === 'W' ? 'w' : 'l'}" title="${esc(f.detail)}">${esc(f.result)}</div>`).join('')}
       </div>
       <div style="font-size:11px;color:var(--text-muted);margin-top:10px;">&larr; pi&ugrave; recente &nbsp;|&nbsp; passa il mouse per i dettagli</div>
     </div>
@@ -164,12 +186,12 @@ function renderNews() {
     <div class="section-label">Post-Miami &middot; Verso Monte Carlo &mdash; 1 Apr 2026</div>
     ${DATA.news.map(n => `
       <article class="news-item ${typeMap[n.type] || ''}">
-        <div class="news-icon">${n.icon}</div>
+        <div class="news-icon">${esc(n.icon)}</div>
         <div>
-          <div class="news-tag ${tagMap[n.type]}">${n.tag}${n.tagDate ? ' &middot; ' + n.tagDate : ''}</div>
-          <div class="news-headline">${n.headline}</div>
-          <div class="news-desc">${n.desc}</div>
-          <div class="news-source"><a href="${n.url}" target="_blank" rel="noopener noreferrer">${n.source}</a> &middot; ${n.sourceDate}</div>
+          <div class="news-tag ${tagMap[n.type]}">${esc(n.tag)}${n.tagDate ? ' &middot; ' + esc(n.tagDate) : ''}</div>
+          <div class="news-headline">${esc(n.headline)}</div>
+          <div class="news-desc">${esc(n.desc)}</div>
+          <div class="news-source"><a href="${esc(safeUrl(n.url))}" target="_blank" rel="noopener noreferrer">${esc(n.source)}</a> &middot; ${esc(n.sourceDate)}</div>
         </div>
       </article>
     `).join('')}
@@ -188,10 +210,10 @@ function renderRanking() {
       <h3 class="card-title">Top 5 ATP &mdash; Post-Miami 2026</h3>
       ${DATA.ranking.map(r => `
         <div class="top5-row ${r.highlight ? 'highlight' : 'plain'}">
-          <div class="top5-pos ${r.rank === 1 ? 'pos-gold' : r.rank === 2 ? 'pos-orange' : 'pos-gray'}">${r.rank}</div>
+          <div class="top5-pos ${r.rank === 1 ? 'pos-gold' : r.rank === 2 ? 'pos-orange' : 'pos-gray'}">${esc(r.rank)}</div>
           <div>
-            <div class="top5-name">${r.name} ${r.flag}</div>
-            <div class="top5-status"${r.highlight ? ' style="color:var(--orange);"' : ''}>${r.status}</div>
+            <div class="top5-name">${esc(r.name)} ${esc(r.flag)}</div>
+            <div class="top5-status"${r.highlight ? ' style="color:var(--orange);"' : ''}>${esc(r.status)}</div>
           </div>
           <div class="top5-pts" ${r.rank === 1 ? 'style="color:var(--gold);"' : r.rank === 2 ? 'style="color:var(--orange);"' : ''}>${fmtPts(r.points)}</div>
         </div>
@@ -223,10 +245,10 @@ function renderRanking() {
     </div>
 
     <div class="stat-row">
-      <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${S.wl}</div><div class="stat-lbl">Win/Loss 2026</div></div>
-      <div class="stat-box green-top"><div class="stat-num">${S.setsM1000}</div><div class="stat-lbl">Set M1000 di fila &mdash; Record</div></div>
-      <div class="stat-box"><div class="stat-num">${S.bigTitles}</div><div class="stat-lbl">Big Titles in carriera</div></div>
-      <div class="stat-box gray-top"><div class="stat-num">${S.prizeMoney}</div><div class="stat-lbl">Prize money carriera</div></div>
+      <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${esc(S.wl)}</div><div class="stat-lbl">Win/Loss 2026</div></div>
+      <div class="stat-box green-top"><div class="stat-num">${esc(S.setsM1000)}</div><div class="stat-lbl">Set M1000 di fila &mdash; Record</div></div>
+      <div class="stat-box"><div class="stat-num">${esc(S.bigTitles)}</div><div class="stat-lbl">Big Titles in carriera</div></div>
+      <div class="stat-box gray-top"><div class="stat-num">${esc(S.prizeMoney)}</div><div class="stat-lbl">Prize money carriera</div></div>
     </div>
   `;
 }
@@ -241,10 +263,10 @@ function renderCalendario() {
       const pillClass = { green: 'pill-green', orange: 'pill-orange', red: 'pill-red', gray: 'pill-gray' }[t.statusType];
       return `
         <div class="cal-row">
-          <div class="cal-date">${t.dates}</div>
-          <div><div class="cal-name">${t.name}</div><div class="cal-surface">${t.surface}</div></div>
-          <div class="cal-pts ${ptsClass}">${t.pts}</div>
-          <div><span class="pill ${pillClass}">${t.status}</span></div>
+          <div class="cal-date">${esc(t.dates)}</div>
+          <div><div class="cal-name">${esc(t.name)}</div><div class="cal-surface">${esc(t.surface)}</div></div>
+          <div class="cal-pts ${ptsClass}">${esc(t.pts)}</div>
+          <div><span class="pill ${pillClass}">${esc(t.status)}</span></div>
         </div>`;
     }).join('');
   }
@@ -274,10 +296,10 @@ function renderPrevisione() {
     <div class="sc-grid">
       ${DATA.scenari.map(s => `
         <div class="scenario ${s.type === 'best' ? 'best' : s.type === 'mid' ? 'mid' : 'worst'}">
-          <div class="sc-tag">${s.tag}</div>
-          <div class="sc-date">${s.date}</div>
-          <div class="sc-desc">${s.desc}</div>
-          <div class="sc-prob">Probabilit&agrave;: ${s.prob}</div>
+          <div class="sc-tag">${esc(s.tag)}</div>
+          <div class="sc-date">${esc(s.date)}</div>
+          <div class="sc-desc">${esc(s.desc)}</div>
+          <div class="sc-prob">Probabilit&agrave;: ${esc(s.prob)}</div>
         </div>
       `).join('')}
     </div>
@@ -289,12 +311,15 @@ function renderPrevisione() {
       </div>
       ${DATA.previsione.map(p => {
         const negClass = p.alcarazDifende.startsWith('\u2013') || p.alcarazDifende.startsWith('-') ? 'neg' : 'neutral';
+        // barWidth and barColor are interpolated into a style attribute — sanitize strictly
+        const safeWidth = /^\d{1,3}%$/.test(p.barWidth) ? p.barWidth : '50%';
+        const safeColor = /^#[0-9A-Fa-f]{3,8}$/.test(p.barColor) ? p.barColor : '#FF7A00';
         return `
         <div class="pred-row">
-          <div class="pred-name">${p.torneo}${p.done ? ' &#x2705;' : ''}</div>
-          <div class="pred-bar"><div class="pred-bar-inner" style="width:${p.barWidth};background:${p.barColor};"></div></div>
-          <div class="pred-val pos">${p.sinnerMax}</div>
-          <div class="pred-val ${negClass}">${p.alcarazDifende}</div>
+          <div class="pred-name">${esc(p.torneo)}${p.done ? ' &#x2705;' : ''}</div>
+          <div class="pred-bar"><div class="pred-bar-inner" style="width:${safeWidth};background:${safeColor};"></div></div>
+          <div class="pred-val pos">${esc(p.sinnerMax)}</div>
+          <div class="pred-val ${negClass}">${esc(p.alcarazDifende)}</div>
         </div>`;
       }).join('')}
     </div>
@@ -316,10 +341,10 @@ function renderQuote() {
       <h3 class="card-title">Quote speciali &mdash; Tornei e ranking</h3>
       ${Q.speciali.map(q => `
         <div class="odds-row">
-          <div><div class="odds-match">${q.market}</div><div class="odds-sub">${q.sub}</div></div>
-          <div class="odds-block"><div class="odds-val">${q.val1}</div><div class="odds-lbl">${q.lbl1}</div></div>
-          <div class="odds-block"><div class="odds-val secondary">${q.val2}</div><div class="odds-lbl">${q.lbl2}</div></div>
-          <div><span class="odds-tag ${q.tagType === 'green' ? 'ot-green' : 'ot-orange'}">${q.tag}</span></div>
+          <div><div class="odds-match">${esc(q.market)}</div><div class="odds-sub">${esc(q.sub)}</div></div>
+          <div class="odds-block"><div class="odds-val">${esc(q.val1)}</div><div class="odds-lbl">${esc(q.lbl1)}</div></div>
+          <div class="odds-block"><div class="odds-val secondary">${esc(q.val2)}</div><div class="odds-lbl">${esc(q.lbl2)}</div></div>
+          <div><span class="odds-tag ${q.tagType === 'green' ? 'ot-green' : 'ot-orange'}">${esc(q.tag)}</span></div>
         </div>
       `).join('')}
     </div>

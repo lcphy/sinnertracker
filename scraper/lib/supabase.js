@@ -3,7 +3,11 @@
 // ═══════════════════════════════════════════════════════
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://czcszeoylcelgtduijqc.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6Y3N6ZW95bGNlbGd0ZHVpanFjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTQ5MzgzMCwiZXhwIjoyMDkxMDY5ODMwfQ.fRKT2Lu_gh8ziBiycmDAM5j38AaC5mP3VWJ8fgixHM0";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_KEY) {
+  throw new Error("SUPABASE_SERVICE_ROLE_KEY env var is required (no hardcoded fallback for security)");
+}
 
 const headers = {
   "apikey": SUPABASE_KEY,

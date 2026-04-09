@@ -7,8 +7,12 @@
 import { supabase, updateMeta } from "../lib/supabase.js";
 
 const API_HOST = "sportscore1.p.rapidapi.com";
-const API_KEY = process.env.RAPIDAPI_KEY || "06f21745f1msh0f7b7af7dc061fep1b60f4jsn80d31a6f3650";
+const API_KEY = process.env.RAPIDAPI_KEY;
 const SINNER_ID = 12820;
+
+if (!API_KEY) {
+  throw new Error("RAPIDAPI_KEY env var is required (no hardcoded fallback for security)");
+}
 
 // ── Main entry point ──
 export async function scrapeViaAPI() {
