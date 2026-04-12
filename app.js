@@ -54,6 +54,9 @@ function renderOverview() {
   const isLive = !!DATA.currentTournament;
   const nm = isLive && T ? T.sinnerNextMatch : null;
 
+  // Format scheduled time: show "OGGI · HH:MM" if match is today
+  const scheduledDisplay = nm?.scheduled ? formatScheduledForDisplay(nm.scheduled) : '';
+
   // Bracket: played matches sorted most recent first
   const playedMatches = (T?.sinnerPath || []).filter(p => p.result).reverse();
   const upcomingMatches = (T?.sinnerPath || []).filter(p => !p.result);
@@ -73,7 +76,7 @@ function renderOverview() {
       ${nm ? `
       <div class="next-match-banner">
         <div class="next-match-label">${esc(nm.round)} &middot; Prossimo match</div>
-        <div class="next-match-when">${esc(nm.scheduled)}</div>
+        <div class="next-match-when">${esc(scheduledDisplay)}</div>
       </div>
       <div class="match-matchup">
         <div class="matchup-player">
@@ -93,7 +96,24 @@ function renderOverview() {
       `}
     </div>
 
-    <!-- ═══ GAP TO N.1 — one clear line ═══ -->
+    <!-- ═══ TORNEO CORRENTE — played matches (most recent first) ═══ -->
+    ${playedMatches.length > 0 ? `
+    <div class="card">
+      <h3 class="card-title">${esc(T.name?.split(' 2026')[0] || 'Torneo')} &mdash; Percorso</h3>
+      ${playedMatches.map(p => {
+        const won = p.result === "W";
+        return `
+        <div class="bracket-row">
+          <div class="br-round">${esc(p.round)}</div>
+          <div><div class="br-opp">${esc(p.opponent)}</div></div>
+          <div class="br-score" style="color:${won ? 'var(--green)' : 'var(--red)'}">${esc(p.score || '')}</div>
+          <div><span class="pill ${won ? 'pill-green' : 'pill-red'}">${esc(p.result)}</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+    ` : ''}
+
+    <!-- ═══ GAP TO N.1 ═══ -->
     <div class="gap-strip">
       <div class="gap-strip-left">
         <span class="gap-strip-number" style="color:var(--orange);">${fmtPts(Math.abs(DATA.gap))}</span>
@@ -107,38 +127,7 @@ function renderOverview() {
       </div>
     </div>
 
-    <!-- ═══ TORNEO CORRENTE — played matches (most recent first) + upcoming ═══ -->
-    ${(playedMatches.length > 0 || upcomingMatches.length > 0) ? `
-    <div class="card">
-      <h3 class="card-title">${esc(T.name?.split(' 2026')[0] || 'Torneo')} &mdash; Percorso</h3>
-
-      ${playedMatches.map(p => {
-        const won = p.result === "W";
-        return `
-        <div class="bracket-row">
-          <div class="br-round">${esc(p.round)}</div>
-          <div><div class="br-opp">${esc(p.opponent)}</div></div>
-          <div class="br-score" style="color:${won ? 'var(--green)' : 'var(--red)'}">${esc(p.score || '')}</div>
-          <div><span class="pill ${won ? 'pill-green' : 'pill-red'}">${esc(p.result)}</span></div>
-        </div>`;
-      }).join('')}
-
-      ${upcomingMatches.length > 0 && playedMatches.length > 0 ? '<div style="border-top:1px solid var(--border-light);margin:8px 0;"></div>' : ''}
-
-      ${upcomingMatches.map(p => {
-        const isNext = p.round === nm?.round;
-        return `
-        <div class="bracket-row${isNext ? ' final-row' : ''}">
-          <div class="br-round" ${isNext ? 'style="color:var(--orange);"' : ''}>${esc(p.round)}</div>
-          <div><div class="br-opp" ${isNext ? 'style="color:var(--orange);font-weight:700;"' : ''}>${esc(p.opponent)}</div>${p.seed ? `<div class="br-sub">Seed ${esc(p.seed)}</div>` : ''}</div>
-          <div class="br-score"></div>
-          <div><span class="pill ${isNext ? 'pill-orange' : 'pill-gray'}">${isNext ? 'Prossimo' : 'TBD'}</span></div>
-        </div>`;
-      }).join('')}
-    </div>
-    ` : ''}
-
-    <!-- ═══ STATS — compact row ═══ -->
+    <!-- ═══ STATS ═══ -->
     <div class="stat-row">
       <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${esc(S.wl)}</div><div class="stat-lbl">W/L 2026</div></div>
       <div class="stat-box green-top"><div class="stat-num">${esc(S.titles2026)}</div><div class="stat-lbl">Titoli 2026</div></div>
@@ -433,4 +422,29 @@ function initTabScrollIndicator() {
 function fmtPts(n) {
   if (typeof n === "string") return n;
   return new Intl.NumberFormat("it-IT").format(n);
+}
+
+// Show "OGGI · 15:00" if match is today, "DOMANI · 09:00" if tomorrow, else keep original
+function formatScheduledForDisplay(scheduled) {
+  if (!scheduled) return "";
+  // Parse "Ven 10 Apr · 09:00" or "Dom 12 Apr · 13:00" format
+  const match = scheduled.match(/(\d{1,2})\s+(\w+)\s*·\s*(\d{2}:\d{2})/);
+  if (!match) return scheduled;
+  const [, dayStr, monthStr, time] = match;
+  const months = { Gen:0, Feb:1, Mar:2, Apr:3, Mag:4, Giu:5, Lug:6, Ago:7, Set:8, Ott:9, Nov:10, Dic:11 };
+  const monthIdx = months[monthStr];
+  if (monthIdx === undefined) return scheduled;
+
+  const now = new Date();
+  const matchDay = parseInt(dayStr);
+  const today = now.getDate();
+  const thisMonth = now.getMonth();
+
+  if (monthIdx === thisMonth && matchDay === today) {
+    return `OGGI \u00B7 ${time}`;
+  }
+  if (monthIdx === thisMonth && matchDay === today + 1) {
+    return `DOMANI \u00B7 ${time}`;
+  }
+  return scheduled;
 }

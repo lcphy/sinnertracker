@@ -520,13 +520,14 @@ footer {
   .logo { font-size: 16px; }
   .live-badge { font-size: 10px; padding: 3px 8px; }
 
-  /* Hero & matchup */
-  .match-hero { padding: 16px; margin-bottom: 10px; }
-  .match-matchup { grid-template-columns: 1fr; text-align: center; gap: 6px; }
-  .matchup-player.right { text-align: center; }
-  .matchup-vs { padding: 4px 0; }
-  .matchup-name { font-size: 18px; }
+  /* Hero & matchup — stay side by side on mobile */
+  .match-hero { padding: 14px; margin-bottom: 10px; }
+  .match-matchup { gap: 8px; }
+  .matchup-name { font-size: 16px; }
+  .matchup-info { font-size: 11px; }
+  .matchup-vs { font-size: 11px; }
   .next-match-when { font-size: 16px; }
+  .tournament-label { font-size: 12px; }
   .tournament-meta { display: block; margin-left: 0; margin-top: 2px; }
 
   /* Gap strip */

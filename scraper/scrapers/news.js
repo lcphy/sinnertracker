@@ -5,6 +5,7 @@
 import * as cheerio from "cheerio";
 import { fetchRSS } from "../lib/fetch.js";
 import { supabase } from "../lib/supabase.js";
+import { updateMeta } from "../lib/supabase.js";
 
 const RSS_FEEDS = [
   { url: "https://www.oasport.it/category/tennis/feed/", source: "OASport", icon: "🎾" },
@@ -40,6 +41,10 @@ export async function scrapeNews() {
   if (sinnerNews.length === 0) {
     return { count: 0, status: "no Sinner news found" };
   }
+
+  // Detect schedule changes from news headlines/descriptions
+  // Look for patterns like "ore 15", "alle 15:00", "spostata alle", "rinviata"
+  await detectScheduleChanges(sinnerNews);
 
   // Categorize
   const categorized = sinnerNews.map((n, i) => ({
@@ -87,6 +92,57 @@ function stripHTML(html) {
 function truncate(text, max) {
   if (text.length <= max) return text;
   return text.substring(0, max).replace(/\s+\S*$/, "") + "...";
+}
+
+// ── Detect schedule changes from news text ──
+// Italian sports news often report time changes before the API updates.
+// Patterns: "ore 15", "alle 15:00", "spostata alle 14", "rinviata", "posticipata"
+async function detectScheduleChanges(articles) {
+  try {
+    const current = (await supabase.select("current_tournament"))[0];
+    if (!current || !current.is_active || !current.next_scheduled) return;
+
+    // Extract current scheduled time from DB
+    const currentTimeMatch = current.next_scheduled.match(/(\d{1,2}):(\d{2})/);
+    if (!currentTimeMatch) return;
+    const currentHour = parseInt(currentTimeMatch[1]);
+
+    // Scan recent articles for time mentions
+    for (const article of articles) {
+      const text = `${article.headline} ${article.description}`.toLowerCase();
+
+      // Only check articles that mention sinner AND time-related keywords
+      if (!text.includes("sinner")) continue;
+      if (!text.match(/ore\s|alle\s|orario|spost|posticip|anticip|rinvia/)) continue;
+
+      // Extract time: "ore 15", "alle 15:00", "ore 14:30", "dalle 15"
+      const timeMatch = text.match(/(?:ore|alle|dalle)\s+(\d{1,2})(?::(\d{2}))?/);
+      if (!timeMatch) continue;
+
+      const newHour = parseInt(timeMatch[1]);
+      const newMin = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+
+      // Only update if the hour is different and plausible (between 9-21)
+      if (newHour !== currentHour && newHour >= 9 && newHour <= 21) {
+        const newTime = `${String(newHour).padStart(2, "0")}:${String(newMin).padStart(2, "0")}`;
+        // Replace the time part in the scheduled string
+        const newScheduled = current.next_scheduled.replace(/\d{2}:\d{2}/, newTime);
+
+        console.log(`  🕐 Schedule change detected: ${current.next_scheduled} → ${newScheduled}`);
+        console.log(`     Source: "${article.headline.substring(0, 80)}"`);
+
+        await supabase.updateByFilter("current_tournament", "id=eq.1", {
+          next_scheduled: newScheduled,
+          updated_at: new Date().toISOString(),
+        });
+
+        await updateMeta("last_updated", new Date().toISOString());
+        return; // Only apply first detected change
+      }
+    }
+  } catch (err) {
+    console.warn(`  ⚠️ Schedule change detection failed: ${err.message}`);
+  }
 }
 
 function categorizeType(headline) {
