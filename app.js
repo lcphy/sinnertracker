@@ -52,128 +52,107 @@ function renderOverview() {
   const M = DATA.miamiRecap;
   const barPct = Math.round((S.points / A.points) * 100);
   const isLive = !!DATA.currentTournament;
-  const nm = isLive && T.sinnerNextMatch ? T.sinnerNextMatch : null;
+  const nm = isLive && T ? T.sinnerNextMatch : null;
+
+  // Bracket: played matches sorted most recent first
+  const playedMatches = (T?.sinnerPath || []).filter(p => p.result).reverse();
+  const upcomingMatches = (T?.sinnerPath || []).filter(p => !p.result);
 
   el.innerHTML = `
     <h2 class="visually-hidden">Overview</h2>
 
+    <!-- ═══ NEXT MATCH — always on top, most prominent ═══ -->
     <div class="match-hero">
-      <div class="match-hero-label">
-        <span>${isLive ? '\u{1F534} In corso' : 'Prossimo torneo'} &mdash; ${T.name}</span>
-        <span class="match-when">${T.dates} &middot; ${T.surface} &middot; ${T.location}</span>
+      ${T ? `
+      <div class="tournament-label">
+        ${isLive ? '\u{1F534}' : '\u{1F3AF}'} ${esc(T.name)}
+        <span class="tournament-meta">${esc(T.surface)} &middot; ${esc(T.location)}</span>
       </div>
+      ` : ''}
+
       ${nm ? `
       <div class="next-match-banner">
         <div class="next-match-label">${esc(nm.round)} &middot; Prossimo match</div>
         <div class="next-match-when">${esc(nm.scheduled)}</div>
       </div>
-      <div class="match-players">
-        <div>
-          <div class="player-name orange">${S.name}</div>
-          <div class="player-flag">${S.flag} N.${S.rank} ATP &middot; [${T.sinnerSeed}] &middot; ${fmtPts(S.points)} pts</div>
+      <div class="match-matchup">
+        <div class="matchup-player">
+          <div class="matchup-name orange">${esc(S.name)}</div>
+          <div class="matchup-info">${S.flag} N.${S.rank} &middot; [${T.sinnerSeed}]</div>
         </div>
-        <div class="vs-block">
-          <div class="vs">VS</div>
-        </div>
-        <div class="player-right">
-          <div class="player-name">${esc(nm.opponent)}</div>
-          <div class="player-flag">${nm.opponentRank ? `N.${esc(nm.opponentRank)} ATP` : ''}${nm.opponentRank && nm.h2h ? ' &middot; ' : ''}${nm.h2h ? `H2H ${esc(nm.h2h)}` : ''}</div>
+        <div class="matchup-vs">VS</div>
+        <div class="matchup-player right">
+          <div class="matchup-name">${esc(nm.opponent)}</div>
+          <div class="matchup-info">${nm.opponentRank ? `N.${esc(nm.opponentRank)}` : ''}${nm.h2h ? ` &middot; ${esc(nm.h2h)}` : ''}</div>
         </div>
       </div>
       ` : `
-      <div class="match-players">
-        <div>
-          <div class="player-name orange">${S.name}</div>
-          <div class="player-flag">${S.flag} N.${S.rank} ATP &middot; ${fmtPts(S.points)} pts</div>
-        </div>
-        <div class="vs-block">
-          <div class="vs">VS</div>
-          <div class="round-label" style="font-size:20px;color:var(--gold);">&#x1F3AF;</div>
-        </div>
-        <div class="player-right">
-          <div class="player-name">TBD</div>
-          <div class="player-flag">In attesa del sorteggio</div>
-        </div>
+      <div style="text-align:center;padding:16px 0;color:var(--text-on-dark-muted);font-size:14px;">
+        Nessun match programmato
       </div>
       `}
-      <div class="match-stats">
-        <div class="mstat"><div class="mstat-val">${T.sinnerDefends}</div><div class="mstat-lbl">Pts da difendere</div></div>
-        <div class="mstat"><div class="mstat-val" style="color:var(--red);">&minus;${fmtPts(T.alcarazDefends)}</div><div class="mstat-lbl">Alcaraz difende</div></div>
-        <div class="mstat"><div class="mstat-val" style="color:var(--gold);">${Math.abs(DATA.virtualGap)}</div><div class="mstat-lbl">Gap virtuale</div></div>
-        <div class="mstat"><div class="mstat-val" style="color:var(--green);">N.1</div><div class="mstat-lbl">Se vince il torneo &#x1F3C6;</div></div>
+    </div>
+
+    <!-- ═══ GAP TO N.1 — one clear line ═══ -->
+    <div class="gap-strip">
+      <div class="gap-strip-left">
+        <span class="gap-strip-number" style="color:var(--orange);">${fmtPts(Math.abs(DATA.gap))}</span>
+        <span class="gap-strip-label">pts dal N.1</span>
+      </div>
+      <div class="gap-strip-right">
+        ${Math.abs(DATA.virtualGap) < Math.abs(DATA.gap) ?
+          `<span class="gap-strip-virtual">${fmtPts(Math.abs(DATA.virtualGap))} virtuali</span>` : ''}
+        ${T?.alcarazDefends > 0 ?
+          `<span class="gap-strip-note">Se vince ${esc(T.name?.split(' 2026')[0] || 'il torneo')} = <strong>N.1</strong></span>` : ''}
       </div>
     </div>
 
-    ${isLive && T.sinnerPath ? `
+    <!-- ═══ TORNEO CORRENTE — played matches (most recent first) + upcoming ═══ -->
+    ${(playedMatches.length > 0 || upcomingMatches.length > 0) ? `
     <div class="card">
-      <h3 class="card-title">Percorso potenziale di Sinner a ${esc(T.name.split(' 2026')[0])}</h3>
-      ${T.sinnerPath.map(p => {
-        const isPlayed = !!p.result;
-        const isNext = p.round === nm?.round;
+      <h3 class="card-title">${esc(T.name?.split(' 2026')[0] || 'Torneo')} &mdash; Percorso</h3>
+
+      ${playedMatches.map(p => {
         const won = p.result === "W";
-        const pillClass = isPlayed ? (won ? 'pill-green' : 'pill-red') : (isNext ? 'pill-orange' : 'pill-gray');
-        const pillText = isPlayed ? esc(p.result) : (isNext ? 'Prossimo' : 'TBD');
-        const rowClass = isNext && !isPlayed ? ' final-row' : '';
         return `
-        <div class="bracket-row${rowClass}">
-          <div class="br-round" ${isNext && !isPlayed ? 'style="color:var(--orange);"' : ''}>${esc(p.round)}</div>
-          <div><div class="br-opp" ${isNext && !isPlayed ? 'style="color:var(--orange);font-weight:700;"' : ''}>${esc(p.opponent)}</div>${p.seed ? `<div class="br-sub">Seed ${esc(p.seed)}</div>` : ''}</div>
-          <div class="br-score">${esc(p.score || '')}</div>
-          <div><span class="pill ${pillClass}">${pillText}</span></div>
+        <div class="bracket-row">
+          <div class="br-round">${esc(p.round)}</div>
+          <div><div class="br-opp">${esc(p.opponent)}</div></div>
+          <div class="br-score" style="color:${won ? 'var(--green)' : 'var(--red)'}">${esc(p.score || '')}</div>
+          <div><span class="pill ${won ? 'pill-green' : 'pill-red'}">${esc(p.result)}</span></div>
+        </div>`;
+      }).join('')}
+
+      ${upcomingMatches.length > 0 && playedMatches.length > 0 ? '<div style="border-top:1px solid var(--border-light);margin:8px 0;"></div>' : ''}
+
+      ${upcomingMatches.map(p => {
+        const isNext = p.round === nm?.round;
+        return `
+        <div class="bracket-row${isNext ? ' final-row' : ''}">
+          <div class="br-round" ${isNext ? 'style="color:var(--orange);"' : ''}>${esc(p.round)}</div>
+          <div><div class="br-opp" ${isNext ? 'style="color:var(--orange);font-weight:700;"' : ''}>${esc(p.opponent)}</div>${p.seed ? `<div class="br-sub">Seed ${esc(p.seed)}</div>` : ''}</div>
+          <div class="br-score"></div>
+          <div><span class="pill ${isNext ? 'pill-orange' : 'pill-gray'}">${isNext ? 'Prossimo' : 'TBD'}</span></div>
         </div>`;
       }).join('')}
     </div>
     ` : ''}
 
-    <div class="card">
-      <h3 class="card-title">${esc(M.title)} &mdash; Risultati Finali &#x1F3C6;</h3>
-      ${M.matches.map(m => `
-        <div class="bracket-row${m.isFinal ? ' final-row' : ''}">
-          <div class="br-round">${m.isFinal ? 'FINALE &#x1F3C6;' : esc(m.round)}</div>
-          <div><div class="br-opp">${esc(m.opponent)}</div>${m.note ? `<div class="br-sub">${esc(m.note)}</div>` : ''}</div>
-          <div class="br-score">${esc(m.score)}</div>
-          <div><span class="pill pill-green">${m.isFinal ? '&#x1F3C6; WON' : 'W'}</span></div>
-        </div>
-      `).join('')}
-    </div>
-
-    <div class="card">
-      <h3 class="card-title">Gap vs Alcaraz &mdash; Aggiornato post-Miami</h3>
-      <div class="battle">
-        <div class="b-player">
-          <div class="b-name" style="color:var(--orange);">Sinner</div>
-          <div class="b-pts">${fmtPts(S.points)} punti</div>
-          <div class="b-rank rank-2">#${S.rank}</div>
-        </div>
-        <div class="b-gap">
-          <div class="b-gap-val">${fmtPts(DATA.gap)}</div>
-          <div class="b-gap-lbl">punti di distacco</div>
-        </div>
-        <div class="b-player right">
-          <div class="b-name" style="color:var(--gold);">Alcaraz</div>
-          <div class="b-pts">${fmtPts(A.points)} punti</div>
-          <div class="b-rank rank-1">#${A.rank}</div>
-        </div>
-      </div>
-      <div class="bar"><div class="bar-inner" style="width:${barPct}%"></div></div>
-      <div class="note-box">
-        &#x1F3AF; All'inizio di Monte Carlo il gap &egrave; gi&agrave; virtualmente <strong>${Math.abs(DATA.virtualGap)} pts</strong> (Alcaraz perde ${fmtPts(T.alcarazDefends)} in scadenza). Una vittoria di Sinner = ${fmtPts(S.points + 1000)} pts &mdash; Alcaraz non pu&ograve; raggiungerlo neppure arrivando in finale. <strong>N.1 automatico.</strong>
-      </div>
-    </div>
-
+    <!-- ═══ STATS — compact row ═══ -->
     <div class="stat-row">
-      <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${esc(S.wl)}</div><div class="stat-lbl">Win/Loss 2026</div></div>
-      <div class="stat-box green-top"><div class="stat-num">${esc(S.setsM1000)}</div><div class="stat-lbl">Set vinti di fila ai M1000 &mdash; Record ATP</div></div>
-      <div class="stat-box"><div class="stat-num" style="color:var(--gold);">${esc(S.titles2026)}</div><div class="stat-lbl">Titoli 2026 &mdash; IW &#x1F3C6; + Miami &#x1F3C6;</div></div>
-      <div class="stat-box gray-top"><div class="stat-num">${esc(S.m1000Career)}</div><div class="stat-lbl">Masters 1000 in carriera &mdash; tutti su cemento</div></div>
+      <div class="stat-box gold-top"><div class="stat-num" style="color:var(--gold);">${esc(S.wl)}</div><div class="stat-lbl">W/L 2026</div></div>
+      <div class="stat-box green-top"><div class="stat-num">${esc(S.titles2026)}</div><div class="stat-lbl">Titoli 2026</div></div>
+      <div class="stat-box"><div class="stat-num">${esc(S.m1000Career)}</div><div class="stat-lbl">M1000 carriera</div></div>
+      <div class="stat-box gray-top"><div class="stat-num">${esc(S.prizeMoney)}</div><div class="stat-lbl">Prize money</div></div>
     </div>
 
+    <!-- ═══ FORM DOTS ═══ -->
     <div class="card">
-      <h3 class="card-title">Ultimi 8 risultati</h3>
+      <h3 class="card-title">Ultimi risultati</h3>
       <div class="form-row">
         ${DATA.recentForm.map(f => `<div class="fd ${f.result === 'W' ? 'w' : 'l'}" title="${esc(f.detail)}">${esc(f.result)}</div>`).join('')}
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:10px;">&larr; pi&ugrave; recente &nbsp;|&nbsp; passa il mouse per i dettagli</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">&larr; pi&ugrave; recente</div>
     </div>
   `;
 }

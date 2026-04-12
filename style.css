@@ -164,49 +164,92 @@ main { max-width: 900px; margin: 0 auto; padding: 24px 24px 40px; }
   color: var(--text-muted); margin-bottom: 14px;
 }
 
-/* ── HERO CARD (next match/tournament) ── */
+/* ── HERO CARD ── */
 .match-hero {
   background: var(--text);
   color: #fff;
   border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
 }
-.match-hero-label {
-  font-size: 11px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 1px;
-  color: var(--orange); margin-bottom: 18px;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 8px;
-}
-.match-when { color: var(--text-on-dark-muted); font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 12px; }
 
-/* ── NEXT MATCH BANNER (data + ora prominente) ── */
+/* Tournament label (compact) */
+.tournament-label {
+  font-size: 13px; font-weight: 700;
+  color: var(--orange);
+  margin-bottom: 12px;
+}
+.tournament-meta {
+  color: var(--text-on-dark-muted);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+/* ── NEXT MATCH BANNER ── */
 .next-match-banner {
-  background: rgba(255, 122, 0, 0.12);
-  border: 1px solid rgba(255, 122, 0, 0.35);
+  background: rgba(255, 122, 0, 0.15);
+  border: 1.5px solid rgba(255, 122, 0, 0.4);
   border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 18px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.next-match-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--orange);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.next-match-when {
+  font-size: 17px; font-weight: 800;
+  color: #fff;
+}
+
+/* ── MATCHUP (players vs) ── */
+.match-matchup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px; align-items: center;
+  padding-bottom: 8px;
+}
+.matchup-player { }
+.matchup-player.right { text-align: right; }
+.matchup-name { font-size: 20px; font-weight: 800; }
+.matchup-name.orange { color: var(--orange); }
+.matchup-info { font-size: 12px; color: var(--text-on-dark-muted); margin-top: 2px; }
+.matchup-vs {
+  font-size: 12px; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 2px;
+  text-align: center;
+}
+
+/* ── GAP STRIP (compact N.1 distance) ── */
+.gap-strip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--orange);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
-.next-match-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--orange);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.next-match-when {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-}
+.gap-strip-left { display: flex; align-items: baseline; gap: 8px; }
+.gap-strip-number { font-size: 24px; font-weight: 800; }
+.gap-strip-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.gap-strip-right { text-align: right; }
+.gap-strip-virtual { font-size: 12px; color: var(--gold); font-weight: 600; display: block; }
+.gap-strip-note { font-size: 12px; color: var(--text-secondary); display: block; }
+.gap-strip-note strong { color: var(--green); }
 
+/* Legacy — keep for other tabs */
 .match-players {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -472,26 +515,70 @@ footer {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
-  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  /* Header */
+  .header-inner { height: 48px; }
+  .logo { font-size: 16px; }
+  .live-badge { font-size: 10px; padding: 3px 8px; }
+
+  /* Hero & matchup */
+  .match-hero { padding: 16px; margin-bottom: 10px; }
+  .match-matchup { grid-template-columns: 1fr; text-align: center; gap: 6px; }
+  .matchup-player.right { text-align: center; }
+  .matchup-vs { padding: 4px 0; }
+  .matchup-name { font-size: 18px; }
+  .next-match-when { font-size: 16px; }
+  .tournament-meta { display: block; margin-left: 0; margin-top: 2px; }
+
+  /* Gap strip */
+  .gap-strip { flex-direction: column; align-items: flex-start; padding: 12px 14px; }
+  .gap-strip-right { text-align: left; }
+
+  /* Stats */
+  .stat-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-num { font-size: 24px; }
+  .stat-box { padding: 12px; }
+
+  /* Cards & bracket */
+  .card { padding: 14px; margin-bottom: 10px; }
+  .bracket-row { grid-template-columns: 40px 1fr auto auto; gap: 8px; }
+  .br-opp { font-size: 13px; }
+  .br-score { font-size: 13px; }
+
+  /* Tabs */
+  .tab { font-size: 12px; padding: 12px 10px 9px; }
+
+  /* Form dots */
+  .fd { width: 40px; height: 40px; font-size: 14px; }
+
+  /* Scenarios & calendar */
   .sc-grid { grid-template-columns: 1fr; }
+  .cal-row { grid-template-columns: 60px 1fr auto; }
+  .cal-row .cal-pts { display: none; }
+
+  /* Odds */
+  .odds-row { grid-template-columns: 1fr; gap: 8px; }
+  .odds-row > div:first-child { grid-column: 1 / -1; }
+
+  /* Predictions */
+  .pred-header, .pred-row { grid-template-columns: 90px 1fr 60px 70px; }
+
+  /* Other */
+  .battle { grid-template-columns: 1fr; text-align: center; gap: 8px; }
+  .b-player.right { align-items: center; }
+  .b-gap { order: -1; }
+
+  /* Match stats (legacy, for other tabs) */
   .match-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .match-players { grid-template-columns: 1fr; text-align: center; gap: 8px; }
   .player-right { text-align: center; }
   .vs-block { order: -1; }
-  .battle { grid-template-columns: 1fr; text-align: center; gap: 8px; }
-  .b-player.right { align-items: center; }
-  .b-gap { order: -1; }
-  .fd { width: 44px; height: 44px; font-size: 15px; }
-  .cal-row { grid-template-columns: 60px 1fr auto; }
-  .cal-row .cal-pts { display: none; }
-  .odds-row { grid-template-columns: 1fr; gap: 8px; }
-  .odds-row > div:first-child { grid-column: 1 / -1; }
-  .pred-header, .pred-row { grid-template-columns: 90px 1fr 60px 70px; }
 }
 
 @media (max-width: 400px) {
-  main { padding: 16px 16px 32px; }
-  .match-hero { padding: 16px; }
-  .mstat-val { font-size: 18px; }
-  .stat-num { font-size: 24px; }
+  main { padding: 12px 12px 24px; }
+  .match-hero { padding: 14px; }
+  .matchup-name { font-size: 16px; }
+  .next-match-when { font-size: 15px; }
+  .gap-strip-number { font-size: 20px; }
+  .stat-num { font-size: 20px; }
 }
