@@ -73,27 +73,33 @@ async function getSinnerLiveMatch() {
   ) || null;
 }
 
-// ── Get Sinner's results today (with full score from detail endpoint) ──
+// ── Get Sinner's recent results (today AND yesterday — catches matches missed by daily check) ──
 async function getSinnerTodayResults() {
-  const today = new Date().toISOString().split("T")[0];
-  const events = await api(`/sports/2/events/date/${today}`);
-  const sinnerMatches = events.filter(e =>
-    (e.home_team?.id === SINNER_ID || e.away_team?.id === SINNER_ID) &&
-    e.status === "finished"
-  );
-  // Get full details for each match (1 extra request per match — worth it for score)
-  const detailed = [];
-  for (const match of sinnerMatches) {
-    const full = await api(`/events/${match.id}`);
-    detailed.push(full);
+  const results = [];
+  // Check today AND yesterday (if scraper runs at 8am, yesterday's match might not have been caught)
+  for (let i = 0; i <= 1; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split("T")[0];
+
+    const events = await api(`/sports/2/events/date/${dateStr}`);
+    const sinnerMatches = events.filter(e =>
+      (e.home_team?.id === SINNER_ID || e.away_team?.id === SINNER_ID) &&
+      e.status === "finished"
+    );
+
+    for (const match of sinnerMatches) {
+      const full = await api(`/events/${match.id}`);
+      results.push(full);
+    }
   }
-  return detailed;
+  return results;
 }
 
-// ── Get Sinner's next scheduled match ──
+// ── Get Sinner's next scheduled match (including LATER TODAY) ──
 async function getSinnerNextMatch() {
-  // Check tomorrow and next few days
-  for (let i = 1; i <= 3; i++) {
+  // Start from TODAY (i=0), not tomorrow — catches matches scheduled for later today
+  for (let i = 0; i <= 3; i++) {
     const date = new Date();
     date.setDate(date.getDate() + i);
     const dateStr = date.toISOString().split("T")[0];

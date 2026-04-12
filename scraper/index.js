@@ -50,17 +50,20 @@ async function runDaily() {
 
   const apiResult = await scrapeViaAPI();
 
-  // If there's a live match or a finished match today, we're in tournament mode
   if (apiResult.live) {
-    console.log("  🔴 Match LIVE — creating trigger if not exists");
+    // Match in progress right now
+    console.log("  🔴 Match LIVE — creating trigger");
     await ensureLiveTrigger();
-  } else if (apiResult.result) {
-    console.log("  ✅ Match finished today — result updated");
-    // Match already done, remove trigger if exists
+  } else if (apiResult.next) {
+    // Match scheduled for later today or tomorrow — create trigger so we catch it
+    console.log(`  🎯 Match trovato: ${apiResult.next.opponent} — creating live trigger`);
+    await ensureLiveTrigger();
+  } else if (apiResult.result && !apiResult.next) {
+    // Match finished, no more matches coming — clean up
+    console.log("  ✅ Match finished, no next match — removing trigger");
     await removeLiveTriggerIfExists();
   } else {
-    console.log("  📅 No match today");
-    // Remove trigger if exists from yesterday
+    console.log("  📅 No match found (oggi o prossimi 3 giorni)");
     await removeLiveTriggerIfExists();
   }
 
