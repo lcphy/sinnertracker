@@ -53,26 +53,51 @@ function renderOverview() {
   const barPct = Math.round((S.points / A.points) * 100);
   const isLive = !!DATA.currentTournament;
   const nm = isLive && T ? T.sinnerNextMatch : null;
+  const isN1 = S.rank === 1;
 
-  // Format scheduled time: show "OGGI · HH:MM" if match is today
+  // Did Sinner win the current tournament? (all matches played, last one is F with W)
+  const allPlayed = (T?.sinnerPath || []).filter(p => p.result);
+  const wonTournament = allPlayed.some(p => p.round === "F" && p.result === "W");
+
+  // Format scheduled time
   const scheduledDisplay = nm?.scheduled ? formatScheduledForDisplay(nm.scheduled) : '';
 
   // Bracket: played matches sorted most recent first
-  const playedMatches = (T?.sinnerPath || []).filter(p => p.result).reverse();
+  const playedMatches = allPlayed.reverse();
   const upcomingMatches = (T?.sinnerPath || []).filter(p => !p.result);
 
   el.innerHTML = `
     <h2 class="visually-hidden">Overview</h2>
 
-    <!-- ═══ NEXT MATCH — always on top, most prominent ═══ -->
+    <!-- ═══ HERO ═══ -->
     <div class="match-hero">
-      ${T ? `
-      <div class="tournament-label">
-        ${isLive ? '\u{1F534}' : '\u{1F3AF}'} ${esc(T.name)}
+      ${wonTournament ? `
+      <div class="tournament-label" style="color:var(--gold);">
+        \u{1F3C6} ${esc(T.name)} &mdash; CAMPIONE
         <span class="tournament-meta">${esc(T.surface)} &middot; ${esc(T.location)}</span>
       </div>
+      ${isN1 ? `
+      <div class="next-match-banner" style="background:rgba(46,158,92,0.2);border-color:rgba(46,158,92,0.5);">
+        <div class="next-match-label" style="color:var(--green);">\u{1F1EE}\u{1F1F9} N.1 ATP</div>
+        <div class="next-match-when">${fmtPts(S.points)} pts</div>
+      </div>
       ` : ''}
-
+      <div class="match-matchup">
+        <div class="matchup-player">
+          <div class="matchup-name orange">${esc(S.name)} \u{1F3C6}</div>
+          <div class="matchup-info">${S.flag} N.${S.rank} ATP &middot; ${fmtPts(S.points)} pts</div>
+        </div>
+        <div class="matchup-vs">def.</div>
+        <div class="matchup-player right">
+          <div class="matchup-name">${esc(allPlayed[0]?.opponent || '')}</div>
+          <div class="matchup-info">${esc(allPlayed[0]?.score || '')}</div>
+        </div>
+      </div>
+      ` : T ? `
+      <div class="tournament-label">
+        ${isLive && nm ? '\u{1F534}' : '\u{1F3AF}'} ${esc(T.name)}
+        <span class="tournament-meta">${esc(T.surface)} &middot; ${esc(T.location)}</span>
+      </div>
       ${nm ? `
       <div class="next-match-banner">
         <div class="next-match-label">${esc(nm.round)} &middot; Prossimo match</div>
@@ -91,9 +116,10 @@ function renderOverview() {
       </div>
       ` : `
       <div style="text-align:center;padding:16px 0;color:var(--text-on-dark-muted);font-size:14px;">
-        Nessun match programmato
+        In attesa del prossimo match
       </div>
       `}
+      ` : ''}
     </div>
 
     <!-- ═══ TORNEO CORRENTE — played matches (most recent first) ═══ -->
@@ -113,7 +139,18 @@ function renderOverview() {
     </div>
     ` : ''}
 
-    <!-- ═══ GAP TO N.1 ═══ -->
+    <!-- ═══ GAP / N.1 STATUS ═══ -->
+    ${isN1 ? `
+    <div class="gap-strip" style="border-left-color:var(--green);">
+      <div class="gap-strip-left">
+        <span class="gap-strip-number" style="color:var(--green);">N.1</span>
+        <span class="gap-strip-label">ATP &middot; ${fmtPts(S.points)} pts</span>
+      </div>
+      <div class="gap-strip-right">
+        <span class="gap-strip-note">+${fmtPts(Math.abs(DATA.gap))} su ${esc(A.name)}</span>
+      </div>
+    </div>
+    ` : `
     <div class="gap-strip">
       <div class="gap-strip-left">
         <span class="gap-strip-number" style="color:var(--orange);">${fmtPts(Math.abs(DATA.gap))}</span>
@@ -126,6 +163,7 @@ function renderOverview() {
           `<span class="gap-strip-note">Se vince ${esc(T.name?.split(' 2026')[0] || 'il torneo')} = <strong>N.1</strong></span>` : ''}
       </div>
     </div>
+    `}
 
     <!-- ═══ STATS ═══ -->
     <div class="stat-row">
