@@ -281,33 +281,49 @@ function renderCalendario() {
 
   el.innerHTML = `
     <h2 class="visually-hidden">Calendario Tornei 2026</h2>
+    ${C.claySwinG.length > 0 ? `
     <div class="card">
-      <h3 class="card-title">Gi&agrave; giocati</h3>
-      ${calRows(C.giocati)}
-    </div>
-    <div class="card">
-      <h3 class="card-title">Clay Swing &mdash; Prossimi</h3>
+      <h3 class="card-title">Prossimi &mdash; Clay Swing</h3>
       ${calRows(C.claySwinG)}
     </div>
+    ` : ''}
+    ${C.secondoSemestre.length > 0 ? `
     <div class="card">
-      <h3 class="card-title">Grass &amp; Hard &mdash; Secondo semestre</h3>
+      <h3 class="card-title">Prossimi &mdash; Grass &amp; Hard</h3>
       ${calRows(C.secondoSemestre)}
     </div>
+    ` : ''}
+    ${C.giocati.length > 0 ? `
+    <div class="card">
+      <h3 class="card-title">Gi&agrave; giocati 2026</h3>
+      ${calRows(C.giocati)}
+    </div>
+    ` : ''}
   `;
 }
 
 function renderPrevisione() {
   const el = document.getElementById("pane-previsione");
+  const isN1 = DATA.sinner.rank === 1;
 
   el.innerHTML = `
-    <h2 class="visually-hidden">Previsione N.1</h2>
+    <h2 class="visually-hidden">${isN1 ? 'Difesa N.1' : 'Previsione N.1'}</h2>
+
+    ${isN1 ? `
+    <div class="card" style="border-left:4px solid var(--green);margin-bottom:16px;">
+      <h3 class="card-title" style="color:var(--green);">\u{1F3C6} Sinner &egrave; N.1 ATP dal 12 Aprile 2026</h3>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px;">${fmtPts(DATA.sinner.points)} pts &middot; +${fmtPts(Math.abs(DATA.gap))} su Alcaraz</div>
+      <div style="font-size:13px;color:var(--text-secondary);">Obiettivo: mantenere il N.1 fino a fine anno. Sotto: scenari e punti in gioco.</div>
+    </div>
+    ` : ''}
+
     <div class="sc-grid">
       ${DATA.scenari.map(s => `
         <div class="scenario ${s.type === 'best' ? 'best' : s.type === 'mid' ? 'mid' : 'worst'}">
           <div class="sc-tag">${esc(s.tag)}</div>
           <div class="sc-date">${esc(s.date)}</div>
           <div class="sc-desc">${esc(s.desc)}</div>
-          <div class="sc-prob">Probabilit&agrave;: ${esc(s.prob)}</div>
+          <div class="sc-prob">${esc(s.prob)}</div>
         </div>
       `).join('')}
     </div>
